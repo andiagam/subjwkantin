@@ -1,0 +1,1359 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Canteen Admin Dashboard</title>
+    <link rel="stylesheet" href="/style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+  <body class="admin-page">
+    <div class="container">
+      <header class="dashboard-nav fixed-nav">
+        <div class="dashboard-title-wrap">
+          <div class="brand-mark small" aria-hidden="true">CT</div>
+          <div>
+            <h1 class="title">Admin Dashboard</h1>
+          </div>
+        </div>
+        <div class="dashboard-actions">
+          <a class="button-link secondary" href="/scanner.html">Open Scanner</a>
+          <button id="logoutBtn" type="button" class="secondary">Logout</button>
+        </div>
+      </header>
+
+      <div class="admin-actions-container">
+        <section class="admin-action-card card">
+          <div class="inline-controls">
+            <label for="qrDepartment">QR Scope:</label>
+            <select id="qrDepartment" class="nav-select">
+              <option value="">All Departments</option>
+            </select>
+            <select id="qrEmploymentStatus" class="nav-select">
+              <option value="">All Employment</option>
+              <option value="permanent">Permanent</option>
+              <option value="contract">Contract</option>
+              <option value="casual">Casual</option>
+              <option value="on_call">On Call</option>
+              <option value="trainee">Trainee</option>
+            </select>
+            <button id="downloadDeptQrBtn" class="secondary">
+              Download QR Codes
+            </button>
+          </div>
+        </section>
+        <section class="admin-action-card card">
+          <div class="inline-controls">
+            <span class="import-label">Import Excel</span>
+            <input type="file" id="bulkCsvFile" accept=".csv,text/csv,text/plain" />
+            <button type="button" id="bulkCsvBtn" class="secondary">Upload</button>
+            <a class="button-link secondary" href="/employees_import_template.csv" download>
+              Template
+            </a>
+          </div>
+        </section>
+      </div>
+
+      <section class="card">
+        <h2 class="section-title">Add Employee</h2>
+        <form id="addEmployeeForm" class="row">
+          <div>
+            <label for="emp_code">Emp Code</label>
+            <input id="emp_code" name="emp_code" required placeholder="EMP-006" />
+          </div>
+          <div>
+            <label for="full_name">Full Name</label>
+            <input id="full_name" name="full_name" required placeholder="John Doe" />
+          </div>
+          <div>
+            <label for="department">Department</label>
+            <input id="department" name="department" placeholder="Operations" />
+          </div>
+          <div>
+            <label for="employment_status">Employment Status</label>
+            <select id="employment_status" name="employment_status">
+              <option value="permanent" selected>Permanent</option>
+              <option value="contract">Contract</option>
+              <option value="casual">Casual</option>
+              <option value="on_call">On Call</option>
+              <option value="trainee">Trainee</option>
+            </select>
+          </div>
+          <div>
+            <label for="schedule_type">Schedule</label>
+            <select id="schedule_type" name="schedule_type">
+              <option value="regular" selected>Regular</option>
+              <option value="split">Split</option>
+            </select>
+          </div>
+          <button type="submit">Add</button>
+        </form>
+        <div id="formError" class="error"></div>
+      </section>
+
+      <section class="card">
+        <div class="topbar">
+          <h2 class="section-title">Employees</h2>
+          <div class="employee-toolbar">
+            <input
+              id="searchInput"
+              placeholder="Search by name or emp code..."
+              class="search-input"
+            />
+            <select id="departmentFilter">
+              <option value="">All Departments</option>
+            </select>
+            <select id="sortBy">
+              <option value="emp_code">Emp Code</option>
+              <option value="full_name">Full Name</option>
+              <option value="department">Department</option>
+              <option value="status">Status</option>
+            </select>
+            <select id="sortDir">
+              <option value="asc">Ascending</option>
+              <option value="desc">Descending</option>
+            </select>
+            <select id="rowsPerPage">
+              <option value="10">10</option>
+              <option value="25">25</option>
+              <option value="50">50</option>
+              <option value="100">100</option>
+            </select>
+          </div>
+        </div>
+        <div class="employee-filterbar inline-controls" aria-label="Employee filters">
+          <label for="employmentStatusFilter">Employment:</label>
+          <select id="employmentStatusFilter">
+            <option value="">All Employment</option>
+            <option value="permanent">Permanent</option>
+            <option value="contract">Contract</option>
+            <option value="casual">Casual</option>
+            <option value="on_call">On Call</option>
+            <option value="trainee">Trainee</option>
+          </select>
+
+          <label for="scheduleTypeFilter">Schedule:</label>
+          <select id="scheduleTypeFilter">
+            <option value="">All Schedules</option>
+            <option value="regular">Regular</option>
+            <option value="split">Split</option>
+          </select>
+
+          <label for="activeFilter">Active:</label>
+          <select id="activeFilter">
+            <option value="">All</option>
+            <option value="true">Active</option>
+            <option value="false">Inactive</option>
+          </select>
+
+          <label for="statusFilter">Status:</label>
+          <select id="statusFilter">
+            <option value="">All Status</option>
+            <option value="ELIGIBLE">Eligible</option>
+            <option value="USED">Used</option>
+          </select>
+
+          <button id="resetEmployeeFiltersBtn" class="secondary" type="button">
+            Reset Filters
+          </button>
+        </div>
+        <div class="employee-toolbar-meta">
+          <div></div>
+          <div id="paginationSummary" class="summary-text">Showing 0–0 of 0 employees</div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Emp Code</th>
+              <th>Full Name</th>
+              <th>Department</th>
+              <th>Employment Status</th>
+              <th>Schedule</th>
+              <th>Status</th>
+              <th>Active</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="employeeBody"></tbody>
+        </table>
+        <div class="pagination-bar employee-pagination">
+          <div class="inline-controls employee-pagination-controls">
+            <button id="firstPageBtn" type="button" class="secondary">First</button>
+            <button id="prevPageBtn" type="button" class="secondary">Previous</button>
+            <span id="pageIndicator">Page 1 of 1</span>
+            <button id="nextPageBtn" type="button" class="secondary">Next</button>
+            <button id="lastPageBtn" type="button" class="secondary">Last</button>
+          </div>
+          <div id="pageCountSummary" class="summary-text">Showing 0–0 of 0 employees</div>
+        </div>
+      </section>
+
+      <section class="card danger-zone">
+        <p class="danger-zone-label">Danger Zone</p>
+        <button id="deleteAllEmployeesBtn" type="button" class="danger-outline">
+          Delete All Employees
+        </button>
+      </section>
+
+      <section class="card">
+        <div class="topbar meal-logs-topbar">
+          <h2 class="section-title">Meal Logs</h2>
+          <div class="inline-controls meal-logs-controls">
+            <label for="logDate">Date:</label>
+            <input type="date" id="logDate" />
+            <select id="mealCategoryFilter" name="meal_category">
+              <option value="">All Categories</option>
+              <option value="breakfast">Breakfast</option>
+              <option value="lunch">Lunch</option>
+              <option value="dinner">Dinner</option>
+              <option value="outside">Outside</option>
+            </select>
+            <select id="mealDepartmentFilter" name="department"></select>
+            <select id="mealEmploymentStatusFilter" name="employment_status">
+              <option value="">All</option>
+              <option value="permanent">Permanent</option>
+              <option value="contract">Contract</option>
+              <option value="casual">Casual</option>
+              <option value="on_call">On Call</option>
+              <option value="trainee">Trainee</option>
+            </select>
+            <select id="mealStatusFilter" name="status">
+              <option value="">All</option>
+              <option value="ALLOWED">Allowed</option>
+              <option value="DENIED">Denied</option>
+            </select>
+            <button id="loadLogsBtn" class="secondary">Load</button>
+            <button id="exportLogsBtn" class="secondary">Export</button>
+            <button id="resetLogsFiltersBtn" class="secondary" type="button">
+              Reset Filters
+            </button>
+          </div>
+        </div>
+
+        <div id="logsCounters" class="logs-counters"></div>
+        <div id="logsBreakdown" class="summary-text"></div>
+        <div class="logs-chart-grid">
+          <div class="logs-chart-card">
+            <h3 class="logs-chart-title">Meal Category Distribution</h3>
+            <canvas id="logsMealCategoryChart"></canvas>
+          </div>
+          <div class="logs-chart-card">
+            <div class="chart-controls">
+              <label for="chartTypeSelect">Chart Type:</label>
+              <select id="chartTypeSelect">
+                <option value="department">Scans by Department</option>
+                <option value="employment_status">Scans by Employment Status</option>
+              </select>
+            </div>
+            <h3 class="logs-chart-title" id="dynamicChartTitle">Scans by Department</h3>
+            <canvas id="logsDepartmentChart"></canvas>
+          </div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Date</th>
+              <th>Emp Code</th>
+              <th>Name</th>
+              <th>Department</th>
+              <th>Employment Status</th>
+              <th>Meal</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="logBody"></tbody>
+        </table>
+      </section>
+    </div>
+
+    <div id="confirmModalBackdrop" class="modal-backdrop" role="dialog" aria-modal="true">
+      <div class="modal">
+        <h3 id="confirmTitle">Confirm</h3>
+        <div id="confirmBody"></div>
+        <div class="modal-actions" id="confirmActions"></div>
+      </div>
+    </div>
+
+    <script>
+      const addEmployeeForm = document.getElementById("addEmployeeForm");
+      const employeeBody = document.getElementById("employeeBody");
+      const logBody = document.getElementById("logBody");
+      const logDateInput = document.getElementById("logDate");
+      const loadLogsBtn = document.getElementById("loadLogsBtn");
+      const exportLogsBtn = document.getElementById("exportLogsBtn");
+      const resetLogsFiltersBtn = document.getElementById("resetLogsFiltersBtn");
+      const mealCategoryFilterSelect = document.getElementById("mealCategoryFilter");
+      const mealDepartmentFilterSelect = document.getElementById("mealDepartmentFilter");
+      const mealEmploymentStatusFilterSelect = document.getElementById(
+        "mealEmploymentStatusFilter"
+      );
+      const mealStatusFilterSelect = document.getElementById("mealStatusFilter");
+      const logsCountersEl = document.getElementById("logsCounters");
+      const logsBreakdownEl = document.getElementById("logsBreakdown");
+      const logsMealCategoryChartEl = document.getElementById("logsMealCategoryChart");
+      const logsDepartmentChartEl = document.getElementById(
+        "logsDepartmentChart"
+      );
+      const chartTypeSelect = document.getElementById("chartTypeSelect");
+      const dynamicChartTitle = document.getElementById("dynamicChartTitle");
+      const formError = document.getElementById("formError");
+      const downloadDeptQrBtn = document.getElementById("downloadDeptQrBtn");
+      const qrDepartmentSelect = document.getElementById("qrDepartment");
+      const qrEmploymentStatusSelect = document.getElementById("qrEmploymentStatus");
+      const sortBySelect = document.getElementById("sortBy");
+      const sortDirSelect = document.getElementById("sortDir");
+      const bulkCsvFile = document.getElementById("bulkCsvFile");
+      const bulkCsvBtn = document.getElementById("bulkCsvBtn");
+      const searchInput = document.getElementById("searchInput");
+      const rowsPerPageSelect = document.getElementById("rowsPerPage");
+      const departmentFilterSelect = document.getElementById("departmentFilter");
+      const employmentStatusFilterSelect = document.getElementById(
+        "employmentStatusFilter"
+      );
+      const scheduleTypeFilterSelect = document.getElementById("scheduleTypeFilter");
+      const activeFilterSelect = document.getElementById("activeFilter");
+      const statusFilterSelect = document.getElementById("statusFilter");
+      const resetEmployeeFiltersBtn = document.getElementById("resetEmployeeFiltersBtn");
+      const firstPageBtn = document.getElementById("firstPageBtn");
+      const prevPageBtn = document.getElementById("prevPageBtn");
+      const nextPageBtn = document.getElementById("nextPageBtn");
+      const lastPageBtn = document.getElementById("lastPageBtn");
+      const pageIndicator = document.getElementById("pageIndicator");
+      const pageCountSummary = document.getElementById("pageCountSummary");
+      const paginationSummary = document.getElementById("paginationSummary");
+      const deleteAllEmployeesBtn = document.getElementById("deleteAllEmployeesBtn");
+      const logoutBtn = document.getElementById("logoutBtn");
+      const confirmModalBackdrop = document.getElementById("confirmModalBackdrop");
+      const confirmTitle = document.getElementById("confirmTitle");
+      const confirmBody = document.getElementById("confirmBody");
+      const confirmActions = document.getElementById("confirmActions");
+
+      let employeesCache = [];
+      let currentPage = 1;
+      let pageSize = 10;
+      let logsMealCategoryChart = null;
+      let logsDepartmentChart = null;
+      const LOGS_POLL_INTERVAL_MS = 5000;
+
+      function todayISO() {
+        return new Date().toISOString().slice(0, 10);
+      }
+
+      function escapeHtml(value) {
+        return String(value ?? "")
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;");
+      }
+
+      function openModal({ title, bodyHtml, actions }) {
+        confirmTitle.textContent = title;
+        confirmBody.innerHTML = bodyHtml;
+        confirmActions.innerHTML = "";
+        for (const action of actions) {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.textContent = action.label;
+          if (action.className) btn.className = action.className;
+          if (action.disabled) btn.disabled = true;
+          btn.addEventListener("click", action.onClick);
+          confirmActions.appendChild(btn);
+        }
+        confirmModalBackdrop.classList.add("show");
+      }
+
+      function closeModal() {
+        confirmModalBackdrop.classList.remove("show");
+        confirmBody.innerHTML = "";
+        confirmActions.innerHTML = "";
+      }
+
+      confirmModalBackdrop.addEventListener("click", (event) => {
+        if (event.target === confirmModalBackdrop) closeModal();
+      });
+
+      async function fetchEmployees() {
+        const res = await fetch("/api/employees");
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Failed to load employees");
+        return data;
+      }
+
+      async function fetchLogs(date) {
+        const params = new URLSearchParams();
+        params.set("date", date);
+
+        if (mealCategoryFilterSelect.value) {
+          params.set("meal_category", mealCategoryFilterSelect.value);
+        }
+        if (mealDepartmentFilterSelect.value) {
+          params.set("department", mealDepartmentFilterSelect.value);
+        }
+        if (mealEmploymentStatusFilterSelect.value) {
+          params.set(
+            "employment_status",
+            mealEmploymentStatusFilterSelect.value
+          );
+        }
+        if (mealStatusFilterSelect.value) {
+          params.set("status", mealStatusFilterSelect.value);
+        }
+
+        const res = await fetch(`/api/logs?${params.toString()}`);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Failed to load logs");
+        return data;
+      }
+
+      async function fetchDepartments() {
+        const res = await fetch("/api/departments");
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Failed to load departments");
+        return data;
+      }
+
+      function compareValues(a, b, key) {
+        if (key === "is_active") {
+          return Number(a.is_active) - Number(b.is_active);
+        }
+        const left = String(a[key] ?? "").toLowerCase();
+        const right = String(b[key] ?? "").toLowerCase();
+        return left.localeCompare(right);
+      }
+
+      function getSortedEmployees(employees) {
+        const key = sortBySelect.value;
+        const dir = sortDirSelect.value === "desc" ? -1 : 1;
+        return [...employees].sort((a, b) => compareValues(a, b, key) * dir);
+      }
+
+      function renderDepartments(departments) {
+        const previousValue = qrDepartmentSelect.value;
+        qrDepartmentSelect.innerHTML = `
+          <option value="">All Employees</option>
+          ${departments
+            .map(
+              (department) =>
+                `<option value="${escapeHtml(department)}">${escapeHtml(department)}</option>`
+            )
+            .join("")}
+        `;
+
+        qrDepartmentSelect.disabled = employeesCache.length === 0;
+        downloadDeptQrBtn.disabled = employeesCache.length === 0;
+        mealDepartmentFilterSelect.disabled = employeesCache.length === 0;
+        if (!previousValue) {
+          qrDepartmentSelect.value = "";
+        } else if (departments.includes(previousValue)) {
+          qrDepartmentSelect.value = previousValue;
+        }
+
+        const previousFilter = departmentFilterSelect.value;
+        departmentFilterSelect.innerHTML = `
+          <option value="">All Departments</option>
+          ${departments
+            .map(
+              (department) =>
+                `<option value="${escapeHtml(department)}">${escapeHtml(department)}</option>`
+            )
+            .join("")}
+        `;
+        if (departments.includes(previousFilter)) {
+          departmentFilterSelect.value = previousFilter;
+        }
+
+        const previousMealFilter = mealDepartmentFilterSelect.value;
+        mealDepartmentFilterSelect.innerHTML = `
+          <option value="">All Departments</option>
+          ${departments
+            .map(
+              (department) =>
+                `<option value="${escapeHtml(department)}">${escapeHtml(department)}</option>`
+            )
+            .join("")}
+        `;
+
+        if (departments.includes(previousMealFilter)) {
+          mealDepartmentFilterSelect.value = previousMealFilter;
+        }
+      }
+
+      function getFilteredEmployees(employees) {
+        const query = searchInput.value.trim().toLowerCase();
+        const departmentFilter = departmentFilterSelect.value.trim().toLowerCase();
+        const employmentStatusFilter = employmentStatusFilterSelect.value
+          .trim()
+          .toLowerCase();
+        const scheduleTypeFilter = scheduleTypeFilterSelect.value.trim().toLowerCase();
+        const activeFilterRaw = activeFilterSelect.value;
+        const statusFilter = statusFilterSelect.value.trim();
+        const activeFilter =
+          activeFilterRaw === "true"
+            ? true
+            : activeFilterRaw === "false"
+            ? false
+            : null;
+
+        return employees.filter((emp) => {
+          const code = String(emp.emp_code ?? "").toLowerCase();
+          const name = String(emp.full_name ?? "").toLowerCase();
+          const dept = String(emp.department ?? "").toLowerCase();
+          const employmentStatus = String(emp.employment_status ?? "").toLowerCase();
+          const scheduleType = String(emp.schedule_type ?? "").toLowerCase();
+          const isActive = Boolean(emp.is_active);
+          const status = String(emp.status ?? "");
+          const matchesQuery =
+            !query || code.includes(query) || name.includes(query) || dept.includes(query);
+          const matchesDepartment = !departmentFilter || dept === departmentFilter;
+
+          const matchesEmploymentStatus = !employmentStatusFilter || employmentStatus === employmentStatusFilter;
+          const matchesScheduleType = !scheduleTypeFilter || scheduleType === scheduleTypeFilter;
+          const matchesActive =
+            activeFilter === null ? true : isActive === activeFilter;
+          const matchesStatus = !statusFilter || status === statusFilter;
+
+          return (
+            matchesQuery &&
+            matchesDepartment &&
+            matchesEmploymentStatus &&
+            matchesScheduleType &&
+            matchesActive &&
+            matchesStatus
+          );
+        });
+      }
+
+      function renderEmployeeRows(employees) {
+        employeeBody.innerHTML = employees
+          .map((emp) => {
+            const employmentKey = String(emp.employment_status ?? "permanent")
+              .toLowerCase()
+              .trim();
+            const employmentLabelMap = {
+              permanent: "Permanent",
+              contract: "Contract",
+              casual: "Casual",
+              on_call: "On Call",
+              trainee: "Trainee"
+            };
+            const employmentClassMap = {
+              permanent: "emp-permanent",
+              contract: "emp-contract",
+              casual: "emp-casual",
+              on_call: "emp-on_call",
+              trainee: "emp-trainee"
+            };
+
+            const statusClass = emp.status === "ELIGIBLE"
+              ? "eligible"
+              : emp.status === "USED"
+              ? "used"
+              : "inactive";
+
+            return `
+              <tr>
+                <td>${escapeHtml(emp.emp_code)}</td>
+                <td>${escapeHtml(emp.full_name)}</td>
+                <td>${escapeHtml(emp.department || "")}</td>
+                <td>
+                  <span class="badge ${
+                    employmentClassMap[employmentKey] || "emp-trainee"
+                  }">${escapeHtml(
+                    employmentLabelMap[employmentKey] || emp.employment_status || "Permanent"
+                  )}</span>
+                </td>
+                <td>
+                  <label
+                    class="schedule-toggle-switch"
+                    title="${emp.schedule_type === "split" ? "Split" : "Regular"} schedule"
+                  >
+                    <input
+                      type="checkbox"
+                      ${emp.schedule_type === "split" ? "checked" : ""}
+                      data-schedule-toggle="${emp.id}"
+                      ${!emp.is_active ? "disabled" : ""}
+                    />
+                    <span class="schedule-toggle-slider"></span>
+                    <span class="schedule-toggle-current">${
+                      emp.schedule_type === "split" ? "Split" : "Regular"
+                    }</span>
+                  </label>
+                </td>
+                <td>
+                  <label
+                    class="status-toggle-switch"
+                    title="${emp.status === "ELIGIBLE" ? "Eligible" : "Used"}"
+                  >
+                    <input
+                      type="checkbox"
+                      ${emp.status === "ELIGIBLE" ? "checked" : ""}
+                      data-status-toggle="${emp.id}"
+                      ${!emp.is_active ? "disabled" : ""}
+                    />
+                    <span class="status-toggle-slider"></span>
+                    <span class="status-toggle-current">${
+                      emp.status === "ELIGIBLE" ? "Eligible" : "Used"
+                    }</span>
+                  </label>
+                </td>
+                <td>
+                  <label class="toggle-switch" title="${emp.is_active ? "Active" : "Inactive"}">
+                    <input
+                      type="checkbox"
+                      ${emp.is_active ? "checked" : ""}
+                      data-active-toggle="${emp.id}"
+                    />
+                    <span class="toggle-slider"></span>
+                  </label>
+                </td>
+                <td>
+                  <div class="row-actions">
+                    <button class="btn-sm" data-download-qr="${emp.id}">
+                      Download QR
+                    </button>
+                    <button
+                      class="danger btn-sm"
+                      data-delete-employee="${emp.id}"
+                      data-emp-code="${escapeHtml(emp.emp_code)}"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            `;
+          })
+          .join("");
+      }
+
+      function renderPagination(totalItems) {
+        const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+        if (currentPage > totalPages) {
+          currentPage = totalPages;
+        }
+
+        pageIndicator.textContent = `Page ${currentPage} of ${totalPages}`;
+        const start = totalItems === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+        const end = Math.min(totalItems, currentPage * pageSize);
+        const summaryText = `Showing ${start}–${end} of ${totalItems} employees`;
+        pageCountSummary.textContent = summaryText;
+        paginationSummary.textContent = summaryText;
+
+        firstPageBtn.disabled = currentPage === 1;
+        prevPageBtn.disabled = currentPage === 1;
+        nextPageBtn.disabled = currentPage === totalPages;
+        lastPageBtn.disabled = currentPage === totalPages;
+      }
+
+      function renderTable(employees) {
+        const filteredEmployees = getFilteredEmployees(employees);
+        const sortedEmployees = getSortedEmployees(filteredEmployees);
+        const totalItems = sortedEmployees.length;
+        const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+
+        if (currentPage > totalPages) {
+          currentPage = totalPages;
+        }
+
+        const start = (currentPage - 1) * pageSize;
+        const end = start + pageSize;
+        const visible = sortedEmployees.slice(start, end);
+
+        renderEmployeeRows(visible);
+        renderPagination(totalItems);
+      }
+
+      function renderLogs(logs) {
+        function mealLabel(mealCategory) {
+          const v = String(mealCategory || "").toLowerCase();
+          if (v === "breakfast") return "Breakfast";
+          if (v === "lunch") return "Lunch";
+          if (v === "dinner") return "Dinner";
+          return "Outside";
+        }
+
+        function mealClass(mealCategory) {
+          const v = String(mealCategory || "").toLowerCase();
+          if (v === "breakfast") return "meal-breakfast";
+          if (v === "lunch") return "meal-lunch";
+          if (v === "dinner") return "meal-dinner";
+          return "meal-outside";
+        }
+
+        const totalScans = logs.length;
+        const allowed = logs.filter((l) => l.status === "ALLOWED").length;
+        const denied = logs.filter((l) => l.status === "DENIED").length;
+        const breakfast = logs.filter((l) => l.meal_category === "breakfast").length;
+        const lunch = logs.filter((l) => l.meal_category === "lunch").length;
+        const dinner = logs.filter((l) => l.meal_category === "dinner").length;
+
+        const departmentCounts = {};
+        logs.forEach((log) => {
+          const dept = log.department || "Unknown";
+          departmentCounts[dept] = (departmentCounts[dept] || 0) + 1;
+        });
+        const departmentLabels = Object.keys(departmentCounts);
+        const departmentData = Object.values(departmentCounts);
+
+        const employmentStatusCounts = {};
+        logs.forEach((log) => {
+          const status = log.employment_status || "Unknown";
+          employmentStatusCounts[status] = (employmentStatusCounts[status] || 0) + 1;
+        });
+        const employmentStatusLabels = Object.keys(employmentStatusCounts);
+        const employmentStatusData = Object.values(employmentStatusCounts);
+
+        if (logsCountersEl) {
+          logsCountersEl.innerHTML = `
+            <div class="logs-stat logs-stat-total">Total Scans: <b>${totalScans}</b></div>
+            <div class="logs-stat logs-stat-allowed">Allowed: <b>${allowed}</b></div>
+            <div class="logs-stat logs-stat-denied">Denied: <b>${denied}</b></div>
+            <div class="logs-stat logs-stat-breakfast">Breakfast: <b>${breakfast}</b></div>
+            <div class="logs-stat logs-stat-lunch">Lunch: <b>${lunch}</b></div>
+            <div class="logs-stat logs-stat-dinner">Dinner: <b>${dinner}</b></div>
+          `;
+        }
+
+        if (logsBreakdownEl) {
+          const date = logDateInput.value || todayISO();
+          const department = mealDepartmentFilterSelect.value
+            ? mealDepartmentFilterSelect.options[mealDepartmentFilterSelect.selectedIndex]?.text || mealDepartmentFilterSelect.value
+            : "All Departments";
+
+          const mealCategory = mealCategoryFilterSelect.value
+            ? mealCategoryFilterSelect.options[mealCategoryFilterSelect.selectedIndex]?.text || mealCategoryFilterSelect.value
+            : "All Categories";
+
+          logsBreakdownEl.textContent = `Showing results for: ${date} | ${department} | ${mealCategory}`;
+        }
+
+        const outside = logs.filter((l) => l.meal_category === "outside").length;
+
+        if (logsMealCategoryChartEl && typeof Chart !== "undefined") {
+          logsMealCategoryChart?.destroy();
+          logsMealCategoryChart = new Chart(logsMealCategoryChartEl, {
+            type: "doughnut",
+            data: {
+              labels: ["Breakfast", "Lunch", "Dinner", "Outside"],
+              datasets: [
+                {
+                  data: [breakfast, lunch, dinner, outside],
+                  backgroundColor: ["#2563eb", "#16a34a", "#d97706", "#6b7280"],
+                  borderWidth: 0
+                }
+              ]
+            },
+            options: {
+              responsive: true,
+              aspectRatio: 1.5, // Better aspect ratio for doughnut charts
+              plugins: {
+                legend: {
+                  position: "bottom"
+                },
+                tooltip: {
+                  callbacks: {
+                    label(context) {
+                      const value = context.raw || 0;
+                      const pct = totalScans > 0 ? ((value / totalScans) * 100).toFixed(1) : "0.0";
+                      return `${context.label}: ${value} (${pct}%)`;
+                    }
+                  }
+                }
+              }
+            }
+          });
+        }
+
+        if (logsDepartmentChartEl && typeof Chart !== "undefined") {
+          logsDepartmentChart?.destroy();
+
+          const chartType = chartTypeSelect.value;
+          let labels, data, title;
+
+          if (chartType === "department") {
+            labels = departmentLabels;
+            data = departmentData;
+            title = "Scans by Department";
+          } else {
+            labels = employmentStatusLabels;
+            data = employmentStatusData;
+            title = "Scans by Employment Status";
+          }
+
+          // Update the chart title
+          if (dynamicChartTitle) {
+            dynamicChartTitle.textContent = title;
+          }
+
+          logsDepartmentChart = new Chart(logsDepartmentChartEl, {
+            type: "bar",
+            data: {
+              labels: labels,
+              datasets: [
+                {
+                  label: "Scans",
+                  data: data,
+                  backgroundColor: ["#1b7f4e", "#b73434", "#2563eb", "#16a34a", "#d97706", "#6b7280", "#7c3aed", "#ec4899"],
+                  borderRadius: 8
+                }
+              ]
+            },
+            options: {
+              responsive: true,
+              aspectRatio: 1.5, // Better aspect ratio for bar charts (wider than tall)
+              plugins: {
+                legend: {
+                  display: false
+                },
+                tooltip: {
+                  callbacks: {
+                    label(context) {
+                      const value = context.raw || 0;
+                      const pct = totalScans > 0 ? ((value / totalScans) * 100).toFixed(1) : "0.0";
+                      return `Scans: ${value} (${pct}%)`;
+                    }
+                  }
+                }
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  ticks: {
+                    precision: 0
+                  }
+                }
+              }
+            }
+          });
+        }
+
+        logBody.innerHTML = logs
+          .map((log) => {
+            const time = log.scanned_at
+              ? new Date(log.scanned_at).toLocaleTimeString()
+              : "-";
+
+            const mealCategory = log.meal_category || "outside";
+            const meal = mealLabel(mealCategory);
+            const mealBgClass = mealClass(mealCategory);
+
+            return `
+              <tr>
+                <td>${escapeHtml(time)}</td>
+                <td>${escapeHtml(log.meal_date)}</td>
+                <td>${escapeHtml(log.emp_code || "-")}</td>
+                <td>${escapeHtml(log.full_name || "Unknown")}</td>
+                <td>${escapeHtml(log.department || "")}</td>
+                <td>${escapeHtml(log.employment_status || "-")}</td>
+                <td>
+                  <span class="badge ${mealBgClass}">${escapeHtml(meal)}</span>
+                </td>
+                <td>${escapeHtml(log.status)}</td>
+              </tr>
+            `;
+          })
+          .join("");
+      }
+
+      async function reloadAll() {
+        const [employees, logs, departments] = await Promise.all([
+          fetchEmployees(),
+          fetchLogs(logDateInput.value || todayISO()),
+          fetchDepartments()
+        ]);
+        employeesCache = employees;
+        renderTable(employeesCache);
+        renderLogs(logs);
+        renderDepartments(departments);
+      }
+
+      addEmployeeForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        formError.textContent = "";
+
+        const payload = {
+          emp_code: document.getElementById("emp_code").value.trim(),
+          full_name: document.getElementById("full_name").value.trim(),
+          department: document.getElementById("department").value.trim(),
+          employment_status: document.getElementById("employment_status").value,
+          schedule_type: document.getElementById("schedule_type").value
+        };
+
+        try {
+          const res = await fetch("/api/employees", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "Failed to add employee");
+
+          addEmployeeForm.reset();
+          await reloadAll();
+        } catch (error) {
+          formError.textContent = error.message;
+        }
+      });
+
+      employeeBody.addEventListener("change", async (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLInputElement)) return;
+        const activeId = target.getAttribute("data-active-toggle");
+        const scheduleId = target.getAttribute("data-schedule-toggle");
+        const statusId = target.getAttribute("data-status-toggle");
+
+        if (!activeId && !scheduleId && !statusId) return;
+
+        try {
+          if (activeId) {
+            const res = await fetch(`/api/employees/${activeId}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ is_active: target.checked })
+            });
+            const data = await res.json();
+            if (!res.ok)
+              throw new Error(data.error || "Failed to update employee");
+          }
+
+          if (scheduleId) {
+            const nextScheduleType = target.checked ? "split" : "regular";
+            const res = await fetch(`/api/employees/${scheduleId}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ schedule_type: nextScheduleType })
+            });
+            const data = await res.json();
+            if (!res.ok)
+              throw new Error(data.error || "Failed to update schedule");
+          }
+
+          if (statusId) {
+            const nextStatus = target.checked ? "ELIGIBLE" : "USED";
+            const res = await fetch(`/api/employees/${statusId}/status`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ status: nextStatus })
+            });
+            const data = await res.json();
+            if (!res.ok)
+              throw new Error(data.error || "Failed to update status");
+          }
+
+          await reloadAll();
+        } catch (error) {
+          alert(error.message);
+          await reloadAll();
+        }
+      });
+
+      employeeBody.addEventListener("click", (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLButtonElement)) return;
+
+        const deleteId = target.getAttribute("data-delete-employee");
+        if (deleteId) {
+          const code = target.getAttribute("data-emp-code") || deleteId;
+          if (!window.confirm(`Delete employee ${code} and all their meal log rows? This cannot be undone.`)) {
+            return;
+          }
+          void (async () => {
+            try {
+              const res = await fetch(`/api/employees/${deleteId}`, { method: "DELETE" });
+              const data = await res.json();
+              if (!res.ok) throw new Error(data.error || "Failed to delete employee");
+              await reloadAll();
+            } catch (error) {
+              alert(error.message);
+            }
+          })();
+          return;
+        }
+
+        const id = target.getAttribute("data-download-qr");
+        if (!id) return;
+        window.open(`/api/employees/${id}/qr`, "_blank");
+      });
+
+      bulkCsvBtn.addEventListener("click", async () => {
+        const fileInput = bulkCsvFile;
+        if (!fileInput.files || fileInput.files.length === 0) {
+          alert("Choose a CSV file first");
+          return;
+        }
+        const formData = new FormData();
+        formData.append("file", fileInput.files[0]);
+        try {
+          const res = await fetch("/api/employees/import/csv", {
+            method: "POST",
+            body: formData
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "Import failed");
+          bulkCsvFile.value = "";
+          alert(`Import complete: inserted ${data.inserted}, skipped ${data.skipped}, errors ${data.error_count}`);
+          await reloadAll();
+        } catch (error) {
+          alert(error.message);
+        }
+      });
+
+      loadLogsBtn.addEventListener("click", async () => {
+        try {
+          const logs = await fetchLogs(logDateInput.value || todayISO());
+          renderLogs(logs);
+        } catch (error) {
+          alert(error.message);
+        }
+      });
+
+      resetLogsFiltersBtn.addEventListener("click", async () => {
+        mealCategoryFilterSelect.value = "";
+        mealDepartmentFilterSelect.value = "";
+        mealEmploymentStatusFilterSelect.value = "";
+        mealStatusFilterSelect.value = "";
+
+        try {
+          const logs = await fetchLogs(logDateInput.value || todayISO());
+          renderLogs(logs);
+        } catch (error) {
+          alert(error.message);
+        }
+      });
+
+      logoutBtn.addEventListener("click", async () => {
+        try {
+          await fetch("/api/auth/logout", { method: "POST" });
+        } finally {
+          window.location.href = "/login";
+        }
+      });
+
+      deleteAllEmployeesBtn.addEventListener("click", () => {
+        openModal({
+          title: "Delete all employees?",
+          bodyHtml:
+            "<p>Are you sure you want to delete ALL employee data? This will also delete all meal logs.</p>",
+          actions: [
+            { label: "Cancel", className: "secondary", onClick: closeModal },
+            {
+              label: "Continue",
+              className: "danger",
+              onClick: () => {
+                openModal({
+                  title: "Final confirmation",
+                  bodyHtml: `
+                    <p>This action cannot be undone. Type <b>DELETE</b> to confirm.</p>
+                    <div class="inline-controls">
+                      <input id="deleteConfirmInput" placeholder="Type DELETE" style="max-width:220px;" />
+                      <button id="confirmDeleteBtn" type="button" class="danger" disabled>Confirm Delete</button>
+                    </div>
+                    <div id="deleteAllError" class="error"></div>
+                  `,
+                  actions: [{ label: "Close", className: "secondary", onClick: closeModal }]
+                });
+
+                const input = document.getElementById("deleteConfirmInput");
+                const confirmBtn = document.getElementById("confirmDeleteBtn");
+                const errorEl = document.getElementById("deleteAllError");
+
+                input.addEventListener("input", () => {
+                  confirmBtn.disabled = input.value !== "DELETE";
+                });
+
+                confirmBtn.addEventListener("click", async () => {
+                  errorEl.textContent = "";
+                  confirmBtn.disabled = true;
+                  try {
+                    const res = await fetch("/api/employees/all", { method: "DELETE" });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error || "Delete failed");
+                    closeModal();
+                    alert(`Deleted ${data.deleted} employees and cleared meal logs.`);
+                    await reloadAll();
+                  } catch (error) {
+                    errorEl.textContent = error.message;
+                    confirmBtn.disabled = input.value !== "DELETE";
+                  }
+                });
+              }
+            }
+          ]
+        });
+      });
+
+      sortBySelect.addEventListener("change", () => {
+        renderTable(employeesCache);
+      });
+
+      sortDirSelect.addEventListener("change", () => {
+        renderTable(employeesCache);
+      });
+
+      searchInput.addEventListener("input", () => {
+        currentPage = 1;
+        renderTable(employeesCache);
+      });
+
+      departmentFilterSelect.addEventListener("change", () => {
+        currentPage = 1;
+        renderTable(employeesCache);
+      });
+
+      employmentStatusFilterSelect.addEventListener("change", () => {
+        currentPage = 1;
+        renderTable(employeesCache);
+      });
+
+      scheduleTypeFilterSelect.addEventListener("change", () => {
+        currentPage = 1;
+        renderTable(employeesCache);
+      });
+
+      activeFilterSelect.addEventListener("change", () => {
+        currentPage = 1;
+        renderTable(employeesCache);
+      });
+
+      statusFilterSelect.addEventListener("change", () => {
+        currentPage = 1;
+        renderTable(employeesCache);
+      });
+
+      resetEmployeeFiltersBtn.addEventListener("click", () => {
+        departmentFilterSelect.value = "";
+        employmentStatusFilterSelect.value = "";
+        scheduleTypeFilterSelect.value = "";
+        activeFilterSelect.value = "";
+        statusFilterSelect.value = "";
+        sortBySelect.value = "emp_code";
+        sortDirSelect.value = "asc";
+        searchInput.value = "";
+        rowsPerPageSelect.value = "10";
+        pageSize = 10;
+        currentPage = 1;
+        renderTable(employeesCache);
+      });
+
+      rowsPerPageSelect.addEventListener("change", () => {
+        pageSize = Number(rowsPerPageSelect.value) || 10;
+        currentPage = 1;
+        renderTable(employeesCache);
+      });
+
+      firstPageBtn.addEventListener("click", () => {
+        currentPage = 1;
+        renderTable(employeesCache);
+      });
+
+      prevPageBtn.addEventListener("click", () => {
+        if (currentPage > 1) {
+          currentPage -= 1;
+          renderTable(employeesCache);
+        }
+      });
+
+      nextPageBtn.addEventListener("click", () => {
+        currentPage += 1;
+        renderTable(employeesCache);
+      });
+
+      lastPageBtn.addEventListener("click", () => {
+        const totalItems = getSortedEmployees(getFilteredEmployees(employeesCache)).length;
+        const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+        currentPage = totalPages;
+        renderTable(employeesCache);
+      });
+
+      downloadDeptQrBtn.addEventListener("click", () => {
+        const department = qrDepartmentSelect.value;
+        const employmentStatus = qrEmploymentStatusSelect.value;
+        const params = new URLSearchParams();
+        if (department) params.set("department", department);
+        if (employmentStatus) params.set("employment_status", employmentStatus);
+        const query = params.toString() ? `?${params.toString()}` : "";
+        window.open(`/api/employees/qr/bulk${query}`, "_blank");
+      });
+
+      exportLogsBtn.addEventListener("click", () => {
+        const selectedDate = logDateInput.value || todayISO();
+        openModal({
+          title: "Export meal logs",
+          bodyHtml: `
+            <div style="display:grid; gap:10px;">
+              <div>
+                <label style="display:block; margin-bottom:6px;">Period</label>
+                <div class="inline-controls">
+                  <label><input type="radio" name="period" value="daily" checked /> Daily</label>
+                  <label><input type="radio" name="period" value="weekly" /> Weekly</label>
+                  <label><input type="radio" name="period" value="monthly" /> Monthly</label>
+                </div>
+              </div>
+              <div id="periodControls"></div>
+              <div>
+                <label style="display:block; margin-bottom:6px;">Format</label>
+                <div class="inline-controls">
+                  <label><input type="radio" name="format" value="csv" checked /> CSV</label>
+                  <label><input type="radio" name="format" value="excel" /> Excel</label>
+                </div>
+              </div>
+              <div class="modal-actions" style="justify-content:flex-start;">
+                <button id="doExportBtn" type="button" class="secondary">Export</button>
+              </div>
+              <div id="exportError" class="error"></div>
+            </div>
+          `,
+          actions: [{ label: "Close", className: "secondary", onClick: closeModal }]
+        });
+
+        const controls = document.getElementById("periodControls");
+        const errorEl = document.getElementById("exportError");
+        const doExportBtn = document.getElementById("doExportBtn");
+
+        function renderPeriod() {
+          const period = document.querySelector('input[name="period"]:checked').value;
+          if (period === "daily") {
+            controls.innerHTML = `
+              <div>
+                <label for="exportDay">Date</label>
+                <input type="date" id="exportDay" value="${selectedDate}" />
+              </div>
+            `;
+          } else if (period === "weekly") {
+            controls.innerHTML = `
+              <div>
+                <label for="exportWeekStart">Start date (7 days)</label>
+                <input type="date" id="exportWeekStart" value="${selectedDate}" />
+              </div>
+            `;
+          } else {
+            const [y, m] = selectedDate.split("-");
+            const year = String(y);
+            const month = String(m).padStart(2, "0");
+            controls.innerHTML = `
+              <div class="inline-controls">
+                <div style="min-width: 160px;">
+                  <label for="exportMonth">Month</label>
+                  <input type="month" id="exportMonth" value="${year}-${month}" />
+                </div>
+              </div>
+            `;
+          }
+        }
+
+        function addDays(iso, days) {
+          const d = new Date(iso + "T00:00:00");
+          d.setDate(d.getDate() + days);
+          return d.toISOString().slice(0, 10);
+        }
+
+        function endOfMonth(ym) {
+          const [y, m] = ym.split("-").map((x) => Number(x));
+          const d = new Date(y, m, 0);
+          return d.toISOString().slice(0, 10);
+        }
+
+        document.querySelectorAll('input[name="period"]').forEach((el) => {
+          el.addEventListener("change", renderPeriod);
+        });
+        renderPeriod();
+
+        doExportBtn.addEventListener("click", () => {
+          errorEl.textContent = "";
+          const period = document.querySelector('input[name="period"]:checked').value;
+          const format = document.querySelector('input[name="format"]:checked').value;
+
+          let from;
+          let to;
+          if (period === "daily") {
+            from = document.getElementById("exportDay").value || today;
+            to = from;
+          } else if (period === "weekly") {
+            from = document.getElementById("exportWeekStart").value || today;
+            to = addDays(from, 6);
+          } else {
+            const ym = document.getElementById("exportMonth").value;
+            if (!ym) {
+              errorEl.textContent = "Choose a month";
+              return;
+            }
+            from = `${ym}-01`;
+            to = endOfMonth(ym);
+          }
+
+          if (!from || !to) {
+            errorEl.textContent = "Invalid date range";
+            return;
+          }
+
+          const url = `/api/logs/export?from=${encodeURIComponent(from)}&to=${encodeURIComponent(
+            to
+          )}&format=${encodeURIComponent(format)}${
+            mealDepartmentFilterSelect.value
+              ? `&department=${encodeURIComponent(mealDepartmentFilterSelect.value)}`
+              : ""
+          }${
+            mealEmploymentStatusFilterSelect.value
+              ? `&employment_status=${encodeURIComponent(
+                  mealEmploymentStatusFilterSelect.value
+                )}`
+              : ""
+          }${
+            mealCategoryFilterSelect.value
+              ? `&meal_category=${encodeURIComponent(mealCategoryFilterSelect.value)}`
+              : ""
+          }${
+            mealStatusFilterSelect.value
+              ? `&status=${encodeURIComponent(mealStatusFilterSelect.value)}`
+              : ""
+          }`;
+          // Navigate to trigger browser download while keeping session cookies.
+          window.location.href = url;
+        });
+      });
+
+      chartTypeSelect.addEventListener("change", () => {
+        // Re-render the logs to update the chart with the new type
+        const date = logDateInput.value || todayISO();
+        fetchLogs(date).then(logs => renderLogs(logs)).catch(error => {
+          console.error("Failed to refresh chart:", error);
+        });
+      });
+
+      async function refreshLiveData() {
+        const [employees, logs, departments] = await Promise.all([
+          fetchEmployees(),
+          fetchLogs(logDateInput.value || todayISO()),
+          fetchDepartments()
+        ]);
+        employeesCache = employees;
+        renderTable(employeesCache);
+        renderLogs(logs);
+        renderDepartments(departments);
+      }
+
+      async function init() {
+        logDateInput.value = todayISO();
+        try {
+          await reloadAll();
+        } catch (error) {
+          formError.textContent = error.message;
+        }
+
+        // Auto-refresh logs so admins see new scans live.
+        setInterval(async () => {
+          try {
+            await refreshLiveData();
+          } catch (_error) {
+            // Ignore transient polling failures and keep UI usable.
+          }
+        }, LOGS_POLL_INTERVAL_MS);
+      }
+
+      void init();
+    </script>
+  </body>
+  </html>

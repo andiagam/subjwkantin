@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Canteen Scanner</title>
+    <link rel="stylesheet" href="/style.css" />
+    <script src="https://unpkg.com/html5-qrcode" defer></script>
+  </head>
+  <body class="scanner-page">
+    <header class="scanner-head">
+      <div>
+        <h1 class="title">Canteen Scanner</h1>
+        <p class="scanner-subtitle">Quick and secure meal scan validation</p>
+      </div>
+      <div class="scanner-meta-card">
+        <div class="meta">
+          <span id="today"></span>
+        </div>
+        <div class="meta">Scans today: <strong id="scanCount">0</strong></div>
+      </div>
+      <a href="/login?next=%2Fadmin&reauth=1" class="scanner-admin-link">Open Admin Dashboard</a>
+    </header>
+
+    <main class="scanner-main">
+      <div class="scanner-card">
+        <div id="reader"></div>
+      </div>
+    </main>
+
+    <div id="resultScreen" class="result-screen">
+      <div class="result-box">
+        <h2 id="resultTitle" class="result-title"></h2>
+        <p id="resultSub" class="result-sub"></p>
+      </div>
+    </div>
+
+    <script>
+      const todayEl = document.getElementById("today");
+      const scanCountEl = document.getElementById("scanCount");
+      const resultScreen = document.getElementById("resultScreen");
+      const resultTitle = document.getElementById("resultTitle");
+      const resultSub = document.getElementById("resultSub");
+
+      let isHandlingScan = false;
+      let scanCount = 0;
+      let audioCtx = null;
+
+      function getAudioContext() {
+        if (!audioCtx) {
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          if (!AudioContextClass) return null;
+          audioCtx = new AudioContextClass();
+        }
+        return audioCtx;
+      }
+
+      function playTone({ frequency, duration, type = "sine", gain = 0.12, delay = 0 }) {
+        const ctx = getAudioContext();
+        if (!ctx) return;
+
+        const now = ctx.currentTime + delay;
+        const oscillator = ctx.createOscillator();
+        const gainNode = ctx.createGain();
+
+        oscillator.type = type;
+        oscillator.frequency.setValueAtTime(frequency, now);
+        gainNode.gain.setValueAtTime(0.0001, now);
+        gainNode.gain.exponentialRampToValueAtTime(gain, now + 0.01);
+        gainNode.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+        oscillator.connect(gainNode);
+        gainNode.connect(ctx.destination);
+
+        oscillator.start(now);
+        oscillator.stop(now + duration);
+      }
+
+      function playSuccessSound() {
+        playTone({ frequency: 880, duration: 0.12, type: "triangle", gain: 0.09 });
+        playTone({ frequency: 1175, duration: 0.16, type: "triangle", gain: 0.1, delay: 0.1 });
+      }
+
+      function playFailSound() {
+        playTone({ frequency: 320, duration: 0.22, type: "sawtooth", gain: 0.08 });
+        playTone({ frequency: 220, duration: 0.26, type: "sawtooth", gain: 0.08, delay: 0.12 });
+      }
+
+      function setToday() {
+        const today = new Date().toLocaleDateString(undefined, {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+          weekday: "long"
+        });
+        todayEl.textContent = today;
+      }
+
+      async function refreshScanCount() {
+        const res = await fetch("/api/scan/stats/today");
+        if (!res.ok) return;
+        const data = await res.json();
+        scanCount = Number(data.count || 0);
+        scanCountEl.textContent = String(scanCount);
+      }
+
+      function showResult(kind, title, subText) {
+        resultScreen.className = `result-screen show ${
+          kind === "ALLOWED" ? "result-allowed" : "result-denied"
+        }`;
+        resultTitle.textContent = title;
+        resultSub.textContent = subText;
+      }
+
+      function hideResult() {
+        resultScreen.className = "result-screen";
+      }
+
+      async function handleScan(decodedText) {
+        if (isHandlingScan) return;
+        isHandlingScan = true;
+
+        try {
+          function mealLabel(mealCategory) {
+            const v = String(mealCategory || "").toLowerCase();
+            if (v === "breakfast") return "Breakfast";
+            if (v === "lunch") return "Lunch";
+            if (v === "dinner") return "Dinner";
+            return "Outside";
+          }
+
+          const res = await fetch("/api/scan", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ emp_code: decodedText.trim() })
+          });
+
+          const data = await res.json();
+          if (!res.ok) {
+            throw new Error(data.error || "Scan request failed");
+          }
+
+          if (data.status === "ALLOWED") {
+            playSuccessSound();
+            const meal = mealLabel(data.meal_category);
+            showResult(
+              "ALLOWED",
+              "ALLOWED",
+              `${data.employee.full_name} - ${
+                data.employee.department || "N/A"
+              } (${meal})`
+            );
+          } else {
+            playFailSound();
+            const reason = data.reason === "quota_used" ? "Quota used today" : "Unknown / inactive";
+            const meal = mealLabel(data.meal_category);
+            showResult("DENIED", "DENIED", `${reason} (${meal})`);
+          }
+
+          await refreshScanCount();
+        } catch (error) {
+          playFailSound();
+          showResult("DENIED", "ERROR", error.message);
+        } finally {
+          setTimeout(() => {
+            hideResult();
+            isHandlingScan = false;
+          }, 3000);
+        }
+      }
+
+      function startScanner() {
+        const qrBoxSize = Math.max(
+          320,
+          Math.min(460, Math.floor(Math.min(window.innerWidth, window.innerHeight) * 0.55))
+        );
+        const scanner = new Html5QrcodeScanner(
+          "reader",
+          { fps: 10, qrbox: { width: qrBoxSize, height: qrBoxSize } },
+          false
+        );
+
+        const readerEl = document.getElementById("reader");
+        if (readerEl) {
+          readerEl.classList.add("mirrored-reader");
+        }
+
+        scanner.render(
+          (decodedText) => {
+            void handleScan(decodedText);
+          },
+          () => {}
+        );
+      }
+
+      async function init() {
+        setToday();
+        await refreshScanCount();
+        startScanner();
+      }
+
+      void init();
+    </script>
+  </body>
+  </html>
